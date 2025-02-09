@@ -12,16 +12,6 @@ DetectorFactory.seed = 0  # 保持结果一致性
 ORIG = "../orig"
 DOCS = "../docs"
 
-PRE_HTML = '''<!DOCTYPE html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novels</title>
-    <link rel="stylesheet" href="/docs/novel.css">
-</head>
-<body>
-'''
-
 POST_HTML = '''</body>
 </html>
 '''
@@ -53,6 +43,16 @@ def get_title(fname):
     return match.group(1) if match else ""
 
 def create_subject_index(subject):
+    pre_html = f'''<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{subject}</title>
+    <link rel="stylesheet" href="../novel.css">
+</head>
+<body>
+'''
+    
     index_html = f"{DOCS}/{subject}/index.html"
     os.makedirs(os.path.dirname(index_html), exist_ok=True)
 
@@ -61,7 +61,7 @@ def create_subject_index(subject):
     docs = [doc[:-4] for doc in docs if doc[-4:] == '.xml']
 
     with open(index_html, "w") as fh:
-        fh.write(PRE_HTML)
+        fh.write(pre_html)
         fh.write(f'    <h2>{subject}</h2>\n')
         fh.write(f'    <p><a href="../index.html">回到小說總表</a></p>\n')
         for doc in docs:
@@ -71,26 +71,24 @@ def create_subject_index(subject):
         fh.write(POST_HTML)
 
 def create_root_index(dirs):
-
-    index_html = f"{DOCS}/index.html"
+    pre_html = '''<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novels</title>
+    <link rel="stylesheet" href="novel.css">
+</head>
+<body>
+'''
     
+    index_html = f"{DOCS}/index.html"
     with open(index_html, "w") as fh:
-        fh.write(PRE_HTML)
+        fh.write(pre_html)
         fh.write(f'    <h2>小說總表</h2>\n')
         for subject in dirs:
             fh.write(f'    <p><a href="{subject}/index.html">{subject}</a></p>\n')
             create_subject_index(subject)
         fh.write(POST_HTML)
-
-def remove_ruby_tags(text):
-    # 這個正則表達式會移除 <ruby> 及其內部的 <rp> 和 <rt> 標籤，只保留原始文字
-    text = re.sub(r'<ruby>(.*?)<rp>\(</rp><rt>.*?</rt><rp>\)</rp></ruby>', r'\1', text)
-    return text
-
-def remove_think_tags(text):
-    # 這個正則表達式會移除 <ruby> 及其內部的 <rp> 和 <rt> 標籤，只保留原始文字
-    text = re.sub(r'<think>.*?</think>\s*', '', text, flags=re.DOTALL)
-    return text
 
 def translate_file(fname):
     orig_file = f"{ORIG}/{fname}.xml"
@@ -138,8 +136,8 @@ def write_html(docs_file, title, src_dict, dst_dict):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{title}</title>
-    <link rel="stylesheet" href="/docs/novel.css">
-    <script src="/docs/novel.js"></script>
+    <link rel="stylesheet" href="../novel.css">
+    <script src="../novel.js"></script>
 </head>
 <body>
 '''
@@ -151,27 +149,28 @@ def write_html(docs_file, title, src_dict, dst_dict):
         s = f'<h3>{title}</h3>'
         fh.write(' ' * 4 + f'{s}\n')
 
-
-        s = f'<a href="../index.html">目次</a> | <a href="{file_index+1:03d}.html">次へ</a>'
+        s = f'<a href="index.html">目次</a> | <a href="{file_index+1:03d}.html">次へ</a>'
         if file_index > 1:
             s = f'<a href="{file_index-1:03d}.html">前へ</a> | ' + s
+        else:
+            s = f'前へ | ' + s
 
         fh.write(' ' * 4 + f'<p>{s}</p>\n')
 
         for pidx, (idx, src) in enumerate(src_dict.items()):
-            fh.write(f'<!--P{idx}-->\n')
-            fh.write(f'<details>\n')
-            fh.write(f'  <summary>{src}</summary><div style="margin-left: 20px;">\n')
+            fh.write(f'    <button onclick="speakText(\'L{pidx}\')"><img src="../speaker.svg"/></button>\n')
+            fh.write('    <details>\n')
+            fh.write(f'        <summary id="L{pidx}">{src}</summary>\n')
+            fh.write('        <div style="margin-left: 20px;">\n')
             if idx in dst_dict:
                 # fh.write(f'  <details>\n')
-                fh.write(f'    <span style="color:darkblue">　{dst_dict[idx]}[{pidx+1}]</span>\n')
+                fh.write(f'            <p class="translate">{dst_dict[idx]}[{pidx+1}]</p>\n')
             
             furi = furigana.add_furigana(src)
-            fh.write(f'\n>  <span style="color:black">{furi}</span>\n')
 
-            # if idx in dst_dict:
-            #     fh.write(f'  </details>\n')
-            fh.write(f'</details><br/>\n\n')
+            fh.write(f'            <p class="furigana">{furi}</p>\n')
+            fh.write('        </div>\n')
+            fh.write('    </details>\n\n')
 
         fh.write(POST_HTML)
 

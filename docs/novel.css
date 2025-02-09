@@ -15,3 +15,60 @@ a:hover {
 a:active {
     color: red; /* Changes color when clicked */
 }
+
+body {
+    font-size: 14px; /* 設定根元素字體大小為 16px */
+}
+
+h3 {
+    color: blue;
+}
+
+button {
+    border: none;
+    background-color: transparent;
+    padding: 0px;
+    cursor: pointer;
+    display: inline-block;
+}
+
+@media (max-width: 768px) {
+    body {
+        font-size: 14px; /* 手機版的字體大小 */
+        color: black;
+    }
+}
+
+/* 當螢幕寬度大於 768px（桌面）時 */
+@media (min-width: 769px) {
+    body {
+        font-size: 17px; /* 桌面版的字體大小 */
+        color: black;
+    }
+}
+
+.translate {
+    color: darkblue;
+    border: 1px dashed darkblue;  /* 設定虛線邊框，顏色為黑色 */
+    padding: 2px;  /* 給 span 增加一些內距，使邊框可見 */
+    margin-top: 0px;
+    margin-bottom: -10px;
+}
+
+.furigana {
+    color: #333;
+  }
+  
+.container {
+    display: flex;            /* 設定為 Flexbox */
+    align-items: center;      /* 垂直置中對齊 */
+}
+
+details {
+    margin-top: -5px;
+    margin-bottom: 10px;
+}
+
+img {
+    width: 1rem;        /* SVG 與文字之間加一點間距 */
+}
