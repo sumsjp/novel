@@ -17,7 +17,7 @@ a:active {
 }
 
 body {
-    font-size: 15px; /* 設定根元素字體大小為 16px */
+    font-size: 16px; /* 設定根元素字體大小為 16px */
 }
 
 h3 {
@@ -34,7 +34,7 @@ button {
 
 @media (max-width: 768px) {
     body {
-        font-size: 15px; /* 手機版的字體大小 */
+        font-size: 16px; /* 手機版的字體大小 */
         color: black;
     }
 }
