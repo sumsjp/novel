@@ -72,3 +72,9 @@ details {
 img {
     width: 1rem;        /* SVG 與文字之間加一點間距 */
 }
+
+.button-container {
+    display: flex;
+    justify-content: space-between; /* Aligns buttons left & right */
+    padding: 10px;
+}

@@ -21,6 +21,7 @@ def remove_think_tags(text):
     return text
 
 def translate_text(input_text):
+    # return input_text
     messages = [
             { 
                 "role": "system", 

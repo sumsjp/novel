@@ -160,7 +160,11 @@ def write_html(docs_file, title, src_dict, dst_dict):
         write_navi(fh, file_index)
 
         for pidx, (idx, src) in enumerate(src_dict.items()):
-            fh.write(f'    <button onclick="speakText(\'L{pidx}\')"><img src="../speaker.svg"/></button>\n')
+            fh.write(f'    <div class="button-container">')
+            fh.write(f'         <button onclick="speakText5({pidx}, 1)"><img src="../speaker.svg"/></button>\n')
+            if pidx % 5 == 0:
+                fh.write(f'         <button onclick="speakText5({pidx}, 5)"><img src="../speaker.svg"/></button>\n')
+            fh.write(f'    </div>')
             fh.write('    <details>\n')
             fh.write(f'        <summary id="L{pidx}">{src}</summary>\n')
             fh.write('        <div style="margin-left: 20px;">\n')
