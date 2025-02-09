@@ -1,0 +1,17 @@
+a:link {
+    color: #0000EE; /* Default unvisited link color */
+    text-decoration: none; /* Removes underline */
+}
+
+a:visited {
+    color: #551A8B; /* Color for visited links */
+}
+
+a:hover {
+    color: red; /* Changes color on hover */
+    text-decoration: underline;
+}
+
+a:active {
+    color: red; /* Changes color when clicked */
+}
