@@ -183,7 +183,7 @@ def translate_docs():
     docs_basenames = {f[len(DOCS)+1:-5] for f in docs_files}  
 
     todo_files = orig_basenames
-    # todo_files = [f for f in todo_files if f not in docs_basenames]
+    todo_files = [f for f in todo_files if f not in docs_basenames]
     todo_files = sorted(todo_files)
 
     n = len(todo_files)
