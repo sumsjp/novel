@@ -1,5 +1,13 @@
 import os
 import re 
+import glob
+from lxml import etree
+from langdetect import detect, DetectorFactory
+import translate
+import furigana
+
+# 初始化分詞器 & 轉換器
+DetectorFactory.seed = 0  # 保持结果一致性
 
 ORIG = "../orig"
 DOCS = "../docs"
@@ -17,6 +25,24 @@ PRE_HTML = '''<!DOCTYPE html>
 POST_HTML = '''</body>
 </html>
 '''
+
+##### region translate
+
+def is_chinese_string(s):
+    if "[TRANS]" in s:
+        return True
+    
+    try:
+        lang = detect(s)
+        if lang[:2] in ["zh", "ko"]:
+            return True
+        print(f"lang={lang} ({s})")
+        return False
+    except:
+        return False
+    
+
+##### end region
 
 def get_title(fname):
     with open(fname, "r", encoding="utf-8") as f:
@@ -56,11 +82,123 @@ def create_root_index(dirs):
             create_subject_index(subject)
         fh.write(POST_HTML)
 
+def remove_ruby_tags(text):
+    # 這個正則表達式會移除 <ruby> 及其內部的 <rp> 和 <rt> 標籤，只保留原始文字
+    text = re.sub(r'<ruby>(.*?)<rp>\(</rp><rt>.*?</rt><rp>\)</rp></ruby>', r'\1', text)
+    return text
+
+def remove_think_tags(text):
+    # 這個正則表達式會移除 <ruby> 及其內部的 <rp> 和 <rt> 標籤，只保留原始文字
+    text = re.sub(r'<think>.*?</think>\s*', '', text, flags=re.DOTALL)
+    return text
+
+def translate_file(fname):
+    orig_file = f"{ORIG}/{fname}.xml"
+    docs_file = f"{DOCS}/{fname}.html"
+
+    # Read the XML content from the file
+    with open(orig_file, 'r', encoding='utf-8') as file:
+        xml_content = file.read()
+
+    # Preprocess to fix malformed <br> tags (add self-closing '/')
+    xml_content = re.sub(r'<br(?!\s*/)>', r'', xml_content)
+    xml_content = f"<div>{xml_content}</div>"
+
+    tree = etree.fromstring(xml_content)
+    ps = tree.xpath('//div[1]//p')
+    title = tree.xpath('//div[1]//title')
+    title =  title[0].text if len(title) > 0 else "NO TITLE"
+
+    # 把所有的非空白句子找出。
+    src_dict = {}  # 存要翻譯的句字
+    dst_dict = {}  # 存放已經翻譯的句子
+    n = len(ps)
+    for i in range(n):
+        p = ps[i]
+        if p.text and p.text.strip():
+            src_dict[i+1] = p.text.strip()
+
+    for idx in range(3):
+        dst_dict = {k: v for k, v in dst_dict.items() if is_chinese_string(v)}
+        if len(src_dict) == len(dst_dict):
+            break
+        translate.translate_list(idx+1, src_dict, dst_dict)
+
+    print(f"Convert {len(src_dict)} lines to {len(src_dict)} lines")
+
+    # create directory first
+    os.makedirs(os.path.dirname(docs_file), exist_ok=True)
+
+    write_html(docs_file, title, src_dict, dst_dict)
+
+
+def write_html(docs_file, title, src_dict, dst_dict):
+    head = f'''<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title}</title>
+    <link rel="stylesheet" href="/docs/novel.css">
+    <script src="/docs/novel.js"></script>
+</head>
+<body>
+'''
+
+    file_index = int(os.path.basename(docs_file)[:-5])
+
+    with open(docs_file, "w", encoding="utf-8") as fh:
+        fh.write(head)
+        s = f'<h3>{title}</h3>'
+        fh.write(' ' * 4 + f'{s}\n')
+
+
+        s = f'<a href="../index.html">目次</a> | <a href="{file_index+1:03d}.html">次へ</a>'
+        if file_index > 1:
+            s = f'<a href="{file_index-1:03d}.html">前へ</a> | ' + s
+
+        fh.write(' ' * 4 + f'<p>{s}</p>\n')
+
+        for pidx, (idx, src) in enumerate(src_dict.items()):
+            fh.write(f'<!--P{idx}-->\n')
+            fh.write(f'<details>\n')
+            fh.write(f'  <summary>{src}</summary><div style="margin-left: 20px;">\n')
+            if idx in dst_dict:
+                # fh.write(f'  <details>\n')
+                fh.write(f'    <span style="color:darkblue">　{dst_dict[idx]}[{pidx+1}]</span>\n')
+            
+            furi = furigana.add_furigana(src)
+            fh.write(f'\n>  <span style="color:black">{furi}</span>\n')
+
+            # if idx in dst_dict:
+            #     fh.write(f'  </details>\n')
+            fh.write(f'</details><br/>\n\n')
+
+        fh.write(POST_HTML)
+
+
+def translate_docs():
+    orig_files = glob.glob(f"{ORIG}/**/*.xml")
+    docs_files = glob.glob(f"{DOCS}/**/*.html")
+
+    orig_basenames = {f[len(ORIG)+1:-4] for f in orig_files}
+    docs_basenames = {f[len(DOCS)+1:-5] for f in docs_files}  
+
+    todo_files = orig_basenames
+    # todo_files = [f for f in todo_files if f not in docs_basenames]
+    todo_files = sorted(todo_files)
+
+    n = len(todo_files)
+    for i in range(n):
+        fname = todo_files[i]
+        print(f"({i+1}/{n}) {fname}")
+        translate_file(fname)
+
 def main():
     dirs = sorted(os.listdir(ORIG))
     dirs = [dir for dir in dirs if os.path.isfile(f'{ORIG}/{dir}/001.xml')]
     
-    create_root_index(dirs)
+    # create_root_index(dirs)
+    translate_docs()
 
 
 if __name__ == '__main__':
