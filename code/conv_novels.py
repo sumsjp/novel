@@ -129,6 +129,14 @@ def translate_file(fname):
 
     write_html(docs_file, title, src_dict, dst_dict)
 
+def write_navi(fh, file_index):
+    s = f'<a href="index.html">目次</a> | <a href="{file_index+1:03d}.html">次へ</a>'
+    if file_index > 1:
+        s = f'<a href="{file_index-1:03d}.html">前へ</a> | ' + s
+    else:
+        s = f'前へ | ' + s
+
+    fh.write(' ' * 4 + f'<p>{s}</p>\n')
 
 def write_html(docs_file, title, src_dict, dst_dict):
     head = f'''<!DOCTYPE html>
@@ -149,13 +157,7 @@ def write_html(docs_file, title, src_dict, dst_dict):
         s = f'<h3>{title}</h3>'
         fh.write(' ' * 4 + f'{s}\n')
 
-        s = f'<a href="index.html">目次</a> | <a href="{file_index+1:03d}.html">次へ</a>'
-        if file_index > 1:
-            s = f'<a href="{file_index-1:03d}.html">前へ</a> | ' + s
-        else:
-            s = f'前へ | ' + s
-
-        fh.write(' ' * 4 + f'<p>{s}</p>\n')
+        write_navi(fh, file_index)
 
         for pidx, (idx, src) in enumerate(src_dict.items()):
             fh.write(f'    <button onclick="speakText(\'L{pidx}\')"><img src="../speaker.svg"/></button>\n')
@@ -171,6 +173,8 @@ def write_html(docs_file, title, src_dict, dst_dict):
             fh.write(f'            <p class="furigana">{furi}</p>\n')
             fh.write('        </div>\n')
             fh.write('    </details>\n\n')
+
+        write_navi(fh, file_index)
 
         fh.write(POST_HTML)
 
@@ -196,7 +200,7 @@ def main():
     dirs = sorted(os.listdir(ORIG))
     dirs = [dir for dir in dirs if os.path.isfile(f'{ORIG}/{dir}/001.xml')]
     
-    # create_root_index(dirs)
+    create_root_index(dirs)
     translate_docs()
 
 
