@@ -160,11 +160,8 @@ def write_html(docs_file, title, src_dict, dst_dict):
         write_navi(fh, file_index)
 
         for pidx, (idx, src) in enumerate(src_dict.items()):
-            fh.write(f'    <div class="button-container">')
-            fh.write(f'         <button onclick="speakText5({pidx}, 1)"><img src="../speaker.svg"/></button>\n')
             if pidx % 5 == 0:
-                fh.write(f'         <button onclick="speakText5({pidx}, 5)"><img src="../speaker.svg"/></button>\n')
-            fh.write(f'    </div>')
+                fh.write(f'   <button class="right-button" onclick="speakText5({pidx}, 5)"><img src="../speaker.svg"/></button>\n')
             fh.write('    <details>\n')
             fh.write(f'        <summary id="L{pidx}">{src}</summary>\n')
             fh.write('        <div style="margin-left: 20px;">\n')
@@ -173,8 +170,9 @@ def write_html(docs_file, title, src_dict, dst_dict):
                 fh.write(f'            <p class="translate">{dst_dict[idx]}[{pidx+1}]</p>\n')
             
             furi = furigana.add_furigana(src)
-
-            fh.write(f'            <p class="furigana">{furi}</p>\n')
+            
+            btn = f'<button onclick="speakText5({pidx}, 1)"><img src="../speaker.svg"/></button>'
+            fh.write(f'            <p class="furigana">{furi} ' + btn + '</p>\n')
             fh.write('        </div>\n')
             fh.write('    </details>\n\n')
 
