@@ -94,7 +94,7 @@ def create_root_index(dirs):
             create_subject_index(subject)
         fh.write(POST_HTML)
 
-def translate_file(fname):
+def translate_file(fname, model_id):
     orig_file = f"{ORIG}/{fname}.xml"
     docs_file = f"{DOCS}/{fname}.html"
 
@@ -124,7 +124,7 @@ def translate_file(fname):
         dst_dict = {k: v for k, v in dst_dict.items() if is_chinese_string(v)}
         if len(src_dict) == len(dst_dict):
             break
-        translate.translate_list(idx+1, src_dict, dst_dict)
+        translate.translate_list(idx+1, src_dict, dst_dict, model_id)
 
     print(f"Convert {len(src_dict)} lines to {len(src_dict)} lines")
 
@@ -189,7 +189,7 @@ def write_html(docs_file, title, src_dict, dst_dict):
         fh.write(POST_HTML)
 
 
-def translate_docs():
+def translate_docs(model_id):
     orig_files = glob.glob(f"{ORIG}/**/*.xml")
     docs_files = glob.glob(f"{DOCS}/**/*.html")
 
@@ -204,15 +204,18 @@ def translate_docs():
     for i in range(n):
         fname = todo_files[i]
         print(f"({i+1}/{n}) {fname}")
-        translate_file(fname)
+        try:
+            translate_file(fname, model_id)
+        except Exception as ex:
+            print(f"Exception: {ex}")
 
 def main():
     dirs = sorted(os.listdir(ORIG))
     dirs = [dir for dir in dirs if os.path.isfile(f'{ORIG}/{dir}/001.xml')]
     
     create_root_index(dirs)
-    translate_docs()
-
+    translate_docs(0)
+    translate_docs(1)
 
 if __name__ == '__main__':
     main()
