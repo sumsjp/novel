@@ -5,6 +5,7 @@ from lxml import etree
 from langdetect import detect, DetectorFactory
 import translate
 import furigana
+import unicodedata
 
 # 初始化分詞器 & 轉換器
 DetectorFactory.seed = 0  # 保持结果一致性
@@ -86,7 +87,10 @@ def create_root_index(dirs):
         fh.write(pre_html)
         fh.write(f'    <h2>小說總表</h2>\n')
         for subject in dirs:
-            fh.write(f'    <p><a href="{subject}/index.html">{subject}</a></p>\n')
+            nfc = unicodedata.normalize("NFC", subject)
+            if nfc != subject:
+                print(f"NFC:\n  {subject}\n  {nfc}")
+            fh.write(f'    <p><a href="{nfc}/index.html">{subject}</a></p>\n')
             create_subject_index(subject)
         fh.write(POST_HTML)
 
