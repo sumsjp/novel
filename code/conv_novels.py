@@ -89,7 +89,7 @@ def create_root_index(dirs):
         for subject in dirs:
             nfc = unicodedata.normalize("NFC", subject)
             if nfc != subject:
-                print(f"NFC:\n  {subject}\n  {nfc}")
+                print(f"NFC: {nfc}")
             fh.write(f'    <p><a href="{nfc}/index.html">{subject}</a></p>\n')
             create_subject_index(subject)
         fh.write(POST_HTML)
@@ -133,8 +133,8 @@ def translate_file(fname):
 
     write_html(docs_file, title, src_dict, dst_dict)
 
-def write_navi(fh, file_index):
-    s = f'<a href="index.html">目次</a> | <a href="{file_index+1:03d}.html">次へ</a>'
+def write_navi(fh, file_index, n):
+    s = f'<a href="index.html">目次</a> | <a href="{file_index+1:03d}.html">次へ</a> [{n}]'
     if file_index > 1:
         s = f'<a href="{file_index-1:03d}.html">前へ</a> | ' + s
     else:
@@ -161,7 +161,8 @@ def write_html(docs_file, title, src_dict, dst_dict):
         s = f'<h3>{title}</h3>'
         fh.write(' ' * 4 + f'{s}\n')
 
-        write_navi(fh, file_index)
+        nline = len(src_dict)
+        write_navi(fh, file_index, nline)
 
         for pidx, (idx, src) in enumerate(src_dict.items()):
             if pidx % 5 == 0:
@@ -180,7 +181,10 @@ def write_html(docs_file, title, src_dict, dst_dict):
             fh.write('        </div>\n')
             fh.write('    </details>\n\n')
 
-        write_navi(fh, file_index)
+            if (pidx + 1) % 100 == 0:
+                fh.write('    <hr/>\n')
+
+        write_navi(fh, file_index, nline)
 
         fh.write(POST_HTML)
 
