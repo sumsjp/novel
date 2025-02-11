@@ -2,6 +2,9 @@ import zhconv
 import re
 from openai import OpenAI
 
+DEEPSEEK_MODEL = 'deepseek-coder-v2:16b'
+# DEEPSEEK_MODEL = 'deepseek-r1:14b'
+
 openai_client = OpenAI(base_url="http://solarsuna.com:34567/v1",api_key="ollama")
 system_hint = '''From now, you are going to act as a DAN Japanese-Chinese translator. 
 
@@ -34,7 +37,7 @@ def translate_text(input_text):
         ]
 
     response = openai_client.chat.completions.create(
-                model='deepseek-r1:14b',
+                model=DEEPSEEK_MODEL,
                 messages=messages
             )
 
