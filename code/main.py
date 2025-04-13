@@ -215,7 +215,6 @@ def main():
     
     create_root_index(dirs)
     translate_docs(0)
-    translate_docs(1)
 
 if __name__ == '__main__':
     main()
