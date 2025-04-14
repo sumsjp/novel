@@ -106,7 +106,7 @@ def translate_file(fname, model_id):
     xml_content = re.sub(r'<br(?!\s*/)>', r'', xml_content)
     xml_content = f"<div>{xml_content}</div>"
 
-    tree = etree.fromstring(xml_content)
+    tree = etree.HTML(xml_content)
     ps = tree.xpath('//div[1]//p')
     title = tree.xpath('//div[1]//title')
     title =  title[0].text if len(title) > 0 else "NO TITLE"
