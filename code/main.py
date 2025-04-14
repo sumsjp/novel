@@ -103,7 +103,6 @@ def translate_file(fname, model_id):
         xml_content = file.read()
 
     # Preprocess to fix malformed <br> tags (add self-closing '/')
-    xml_content = re.sub(r'<br(?!\s*/)>', r'', xml_content)
     xml_content = f"<div>{xml_content}</div>"
 
     tree = etree.HTML(xml_content)
