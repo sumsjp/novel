@@ -82,3 +82,9 @@ img {
 .right-button {
     float: right;
 }
+
+img.drawing {
+    width: auto;
+    height: auto;
+    max-width: 100%; /* Ensures the image doesn't overflow its container */
+}

@@ -20,7 +20,7 @@ POST_HTML = '''</body>
 ##### region translate
 
 def is_chinese_string(s):
-    if "[TRANS]" in s:
+    if "[TRANS]" or "[IMG]" in s:
         return True
     
     try:
@@ -94,6 +94,18 @@ def create_root_index(dirs):
             create_subject_index(subject)
         fh.write(POST_HTML)
 
+def get_text_or_image(p):
+    # 檢查是否有 img 標籤
+    img = p.xpath('.//img')
+    if img:
+        # 獲取第一個 img 的 src 屬性
+        src = img[0].get('src')
+        return f'[IMG]https:{src}[/IMG]'  # 用特殊標記包裹圖片URL
+    
+    # 如果不是圖片，返回一般文本
+    text = p.xpath('string()')
+    return text.strip() if text else ""
+
 def translate_file(fname, model_id):
     orig_file = f"{ORIG}/{fname}.xml"
     docs_file = f"{DOCS}/{fname}.html"
@@ -116,8 +128,9 @@ def translate_file(fname, model_id):
     n = len(ps)
     for i in range(n):
         p = ps[i]
-        if p.text and p.text.strip():
-            src_dict[i+1] = p.text.strip()
+        text = get_text_or_image(p)
+        if text:  # 如果有內容（文本或圖片URL）
+            src_dict[i+1] = text
 
     for idx in range(3):
         dst_dict = {k: v for k, v in dst_dict.items() if is_chinese_string(v)}
@@ -166,18 +179,25 @@ def write_html(docs_file, title, src_dict, dst_dict):
         for pidx, (idx, src) in enumerate(src_dict.items()):
             if pidx % 5 == 0:
                 fh.write(f'   <button class="right-button" onclick="speakText(this, {pidx}, 5)"><img src="../speaker.svg"/></button>\n')
+            
             fh.write('    <details>\n')
-            fh.write(f'        <summary id="L{pidx}">{src}</summary>\n')
-            fh.write('        <div style="margin-left: 20px;">\n')
-            if idx in dst_dict:
-                # fh.write(f'  <details>\n')
-                fh.write(f'            <p class="translate">{dst_dict[idx]}[{pidx+1}]</p>\n')
+
+            if ("[IMG]" in src):
+                src = src[5:-6]
+                fh.write(f'        <summary id="L{pidx}">插畫</summary>\n')
+                fh.write(f'        <img class="drawing" src="{src}"/>\n')
+            else:
+                fh.write(f'        <summary id="L{pidx}">{src}</summary>\n')
+                fh.write('        <div style="margin-left: 20px;">\n')
+                if idx in dst_dict:
+                    # fh.write(f'  <details>\n')
+                    fh.write(f'            <p class="translate">{dst_dict[idx]}[{pidx+1}]</p>\n')
             
-            furi = furigana.add_furigana(src)
+                furi = furigana.add_furigana(src)
             
-            btn = f'<button onclick="speakText(this, {pidx}, 1)"><img src="../speaker.svg"/></button>'
-            fh.write(f'            <p class="furigana">{furi} ' + btn + '</p>\n')
-            fh.write('        </div>\n')
+                btn = f'<button onclick="speakText(this, {pidx}, 1)"><img src="../speaker.svg"/></button>'
+                fh.write(f'            <p class="furigana">{furi} ' + btn + '</p>\n')
+                fh.write('        </div>\n')
             fh.write('    </details>\n\n')
 
             if (pidx + 1) % 100 == 0:
