@@ -38,7 +38,7 @@ function extractAndDownload() {
   console.log(filename)
 
   // 保留 HTML 結構
-  const xmlContent = "<titles>" + title + "</title>\n\n" + novelDiv.outerHTML;
+  const xmlContent = "<title>" + title + "</title>\n\n" + novelDiv.outerHTML;
 
   // 轉為 Blob 並下載
   const blob = new Blob([xmlContent], { type: "text/xml" });
