@@ -1,88 +1,52 @@
-// content.js - Content Script
-let sidebar = null;
+let geminiButton = null;
 
-// 監聽來自 background script 的消息
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "showSidebar") {
-    showSidebar(request.selectedText);
+// 移除按鈕的函式
+function removeButton() {
+  if (geminiButton) {
+    geminiButton.remove();
+    geminiButton = null;
+  }
+}
+
+document.addEventListener('mouseup', (event) => {
+  // 延遲一小段時間以確保選取完成
+  setTimeout(() => {
+    const selection = window.getSelection();
+    const selectedText = selection.toString().trim();
+
+    removeButton(); // 先移除舊按鈕
+
+    if (selectedText.length > 0) {
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+
+      geminiButton = document.createElement('button');
+      geminiButton.id = 'gemini-ex-button';
+      geminiButton.innerText = 'Gemini Ex';
+
+      // 定位按鈕在選取文字的右下角
+      geminiButton.style.left = `${window.scrollX + rect.right}px`;
+      geminiButton.style.top = `${window.scrollY + rect.bottom}px`;
+      
+      document.body.appendChild(geminiButton);
+
+      geminiButton.addEventListener('click', () => {
+        console.log('Selected Text:', selectedText);
+        // 傳送訊息到 background script
+        chrome.runtime.sendMessage({
+          action: 'processText',
+          text: selectedText
+        });
+        removeButton();
+      });
+    }
+  }, 10);
+});
+
+// 如果使用者點擊頁面其他地方，就移除按鈕
+document.addEventListener('mousedown', (event) => {
+  if (geminiButton && event.target !== geminiButton) {
+    removeButton();
   }
 });
 
-// 創建並顯示側邊欄
-function showSidebar(selectedText) {
-  // 如果側邊欄已存在，先移除
-  if (sidebar) {
-    sidebar.remove();
-  }
-
-  // 創建側邊欄元素
-  sidebar = document.createElement('div');
-  sidebar.id = 'gemini-sidebar';
-  sidebar.innerHTML = `
-    <div class="sidebar-header">
-      <h3>Gemini 解釋</h3>
-      <button class="close-btn">&times;</button>
-    </div>
-    <div class="sidebar-content">
-      <div class="selected-text">
-        <strong>選中的文字：</strong>
-        <p>${selectedText}</p>
-      </div>
-      <div class="loading" id="loading">
-        <div class="spinner"></div>
-        <p>正在獲取 Gemini 解釋...</p>
-      </div>
-      <div class="response" id="response" style="display: none;">
-        <strong>Gemini 解釋：</strong>
-        <div class="response-content"></div>
-      </div>
-      <div class="error" id="error" style="display: none;">
-        <strong>錯誤：</strong>
-        <div class="error-content"></div>
-      </div>
-    </div>
-  `;
-
-  // 添加到頁面
-  document.body.appendChild(sidebar);
-
-  // 添加關閉按鈕事件
-  sidebar.querySelector('.close-btn').addEventListener('click', () => {
-    sidebar.remove();
-    sidebar = null;
-  });
-
-  // 調用 Gemini API
-  callGeminiAPI(selectedText);
-}
-
-// 調用 Gemini API
-async function callGeminiAPI(text) {
-  try {
-    const response = await chrome.runtime.sendMessage({
-      action: "callGeminiAPI",
-      text: text
-    });
-
-    const loading = document.getElementById('loading');
-    const responseDiv = document.getElementById('response');
-    const errorDiv = document.getElementById('error');
-
-    loading.style.display = 'none';
-
-    if (response.success) {
-      responseDiv.style.display = 'block';
-      responseDiv.querySelector('.response-content').textContent = response.data;
-    } else {
-      errorDiv.style.display = 'block';
-      errorDiv.querySelector('.error-content').textContent = response.error;
-    }
-  } catch (error) {
-    const loading = document.getElementById('loading');
-    const errorDiv = document.getElementById('error');
-    
-    loading.style.display = 'none';
-    errorDiv.style.display = 'block';
-    errorDiv.querySelector('.error-content').textContent = error.message;
-  }
-}

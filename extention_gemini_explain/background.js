@@ -1,133 +1,83 @@
-// background.js - Service Worker
-chrome.runtime.onInstalled.addListener(() => {
-  // 創建上下文菜單
-  chrome.contextMenus.create({
-    id: "gemini-explain",
-    title: "Gemini Ex",
-    contexts: ["selection"]
-  });
-});
-
-// 處理上下文菜單點擊
-chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === "gemini-explain" && info.selectionText) {
-    // 發送消息到 content script，若失敗則嘗試注入後重試
-    trySendMessageWithFallback(tab.id, {
-      action: "showSidebar",
-      selectedText: info.selectionText
-    });
-  }
-});
-
-// 處理來自 content script 的 API 請求
+// 監聽來自 content script 的訊息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "callGeminiAPI") {
-    callGeminiAPI(request.text)
-      .then(response => {
-        sendResponse({ success: true, data: response });
-      })
-      .catch(error => {
-        sendResponse({ success: false, error: error.message });
+    if (request.action === 'processText') {
+      // 1. 打開側邊欄
+      chrome.sidePanel.open({ windowId: sender.tab.windowId });
+      
+      // 2. 取得 API 金鑰並呼叫 Gemini
+      chrome.storage.sync.get(['geminiApiKey'], (result) => {
+        //const apiKey = result.geminiApiKey;
+        const apiKey = 'AIzaSyBzRFKYz309TFv6ZmpvCT7LfDY4xVhuLsE';
+        if (!apiKey) {
+          // 如果沒有金鑰，傳送錯誤訊息到側邊欄
+          chrome.runtime.sendMessage({ type: 'STREAM_ERROR', error: 'API Key not found. Please set it in the extension options.' });
+          return;
+        }
+        callGeminiApi(request.text, apiKey);
       });
-    return true; // 保持消息通道開放
-  }
-});
-
-// Gemini API 調用函數
-async function callGeminiAPI(text) {
-  // 從存儲中獲取 API 密鑰
-  const result = await chrome.storage.sync.get(['geminiApiKey']);
-  // const apiKey = result.geminiApiKey;
-  const apiKey = 'AIzaSyBzRFKYz309TFv6ZmpvCT7LfDY4xVhuLsE';
-  
-  if (!apiKey) {
-    throw new Error('請先在擴展設置中配置 Gemini API 密鑰');
-  }
-
-  // 與提供的 shell 範例對齊：MODEL_ID 與 API entry
-  const model = 'gemini-2.5-flash';
-  const generateApiEntry = 'generateContent'; // 或改為 'streamGenerateContent'（如需串流）
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:${generateApiEntry}?key=${apiKey}`;
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            { text: `請解釋以下文字內容：\n\n${text}` }
-          ]
-        }
-      ],
-      generationConfig: {
-        thinkingConfig: {
-          thinkingBudget: -1
-        }
-      }
-    })
+    }
+    return true; // 表示將會非同步回覆
   });
-
-  if (!response.ok) {
-    let errorText = `API 請求失敗: ${response.status}`;
+  
+  async function callGeminiApi(text, apiKey) {
+    // Gemini 1.5 Flash - 速度快且適合摘要和對話
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:streamGenerateContent?key=${apiKey}`;
+  
+    // 告知側邊欄，API 呼叫已開始
+    chrome.runtime.sendMessage({ type: 'STREAM_START' });
+  
     try {
-      const errBody = await response.json();
-      if (errBody && errBody.error && errBody.error.message) {
-        errorText += ` - ${errBody.error.message}`;
-      }
-    } catch (_) {
-      // ignore
-    }
-    throw new Error(errorText);
-  }
-
-  const data = await response.json();
-  // 防禦式解析，避免資料結構變動導致報錯
-  const textPart = data?.candidates?.[0]?.content?.parts?.[0]?.text
-    || data?.candidates?.[0]?.content?.parts?.[0]?.inlineData
-    || data?.candidates?.[0]?.content?.parts?.[0]?.content
-    || '';
-  if (!textPart) {
-    return JSON.stringify(data);
-  }
-  return textPart;
-}
-
-// 嘗試發送訊息，若沒有接收端則注入 content script 再重試
-async function trySendMessageWithFallback(tabId, message) {
-  try {
-    const response = await chrome.tabs.sendMessage(tabId, message);
-    return response;
-  } catch (error) {
-    // 若接收端不存在，注入 scripts 後重試
-    await ensureContentScriptsInjected(tabId);
-    return chrome.tabs.sendMessage(tabId, message);
-  }
-}
-
-async function ensureContentScriptsInjected(tabId) {
-  try {
-    // 嘗試執行一段 no-op 代碼，若失敗則注入
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      func: () => true
-    });
-  } catch (_) {
-    // 注入 content.js
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      files: ["content.js"]
-    });
-    // 注入 content.css
-    try {
-      await chrome.scripting.insertCSS({
-        target: { tabId },
-        files: ["content.css"]
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `請根據以下文字提供簡潔的回應或摘要：\n\n"${text}"`
+            }]
+          }]
+        })
       });
-    } catch (_) {
-      // 忽略 CSS 注入錯誤
+  
+      if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error.message || `HTTP error! status: ${response.status}`);
+      }
+  
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+  
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+        
+        const chunk = decoder.decode(value);
+        // Gemini 的流式回應可能在一個 chunk 中包含多個 JSON 物件
+        // 它們通常以 "data: " 開頭，我們需要解析它們
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const jsonStr = line.substring(5);
+              const data = JSON.parse(jsonStr);
+              const content = data.candidates[0].content.parts[0].text;
+              // 將解析出的文字片段傳送到側邊欄
+              chrome.runtime.sendMessage({ type: 'STREAM_CONTENT', content: content });
+            } catch (e) {
+              // 忽略無法解析的行
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error calling Gemini API:', error);
+      chrome.runtime.sendMessage({ type: 'STREAM_ERROR', error: error.message });
+    } finally {
+      // 告知側邊欄，串流已結束
+      chrome.runtime.sendMessage({ type: 'STREAM_END' });
     }
   }
-}

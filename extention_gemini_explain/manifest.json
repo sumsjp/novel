@@ -1,17 +1,18 @@
 {
   "manifest_version": 3,
-  "name": "Gemini Explain Extension",
+  "name": "Gemini Sidebar Assistant",
   "version": "1.0",
-  "description": "選擇文字後使用 Gemini API 進行解釋",
+  "description": "Select text to get insights from Gemini in a side panel.",
   "permissions": [
     "activeTab",
-    "contextMenus",
+    "scripting",
     "storage",
-    "scripting"
+    "sidePanel"
   ],
   "host_permissions": [
-    "https://generativelanguage.googleapis.com/*"
+    "https://generativelanguage.googleapis.com/"
   ],
+  "options_page": "options.html",
   "background": {
     "service_worker": "background.js"
   },
@@ -19,12 +20,15 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"],
-      "css": ["content.css"]
+      "css": ["style.css"]
     }
   ],
   "action": {
-    "default_popup": "popup.html",
-    "default_title": "Gemini Explain"
+    "default_title": "Gemini Sidebar Settings",
+    "default_popup": "options.html"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
   },
   "icons": {
     "16": "icons/icon16.png",
