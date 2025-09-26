@@ -1,7 +1,19 @@
 const responseDiv = document.getElementById('response');
 
+// 確保 DOM 已載入
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('Sidepanel loaded and ready');
+});
+
 // 監聽來自 background script 的訊息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('Sidepanel received message:', request);
+  
+  if (!responseDiv) {
+    console.error('Response div not found');
+    return;
+  }
+  
   switch (request.type) {
     case 'STREAM_START':
       responseDiv.innerHTML = '<p class="loading">Waiting for response...</p>';
@@ -22,4 +34,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       console.log('Streaming finished.');
       break;
   }
+  
+  // 回應表示已收到訊息
+  sendResponse({ received: true });
 });
