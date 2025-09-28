@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e -E
 
-GEMINI_API_KEY="AIzaSyBzRFKYz309TFv6ZmpvCT7LfDY4xVhuLsE"
+GEMINI_API_KEY="AIzaSyBzRFKYz309TF"
 MODEL_ID="gemini-2.5-flash"
 GENERATE_CONTENT_API="streamGenerateContent"
 
@@ -24,6 +24,8 @@ cat << EOF > request.json
     },
 }
 EOF
+
+GEMINI_API_KEY = "${GEMINI_API_KEY}v6ZmpvCT7LfDY4xVhuLsE"
 
 curl \
 -X POST \

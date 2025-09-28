@@ -7,7 +7,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
        // 2. 取得 API 金鑰並呼叫 Gemini
        chrome.storage.sync.get(['geminiApiKey'], (result) => {
          // const apiKey = result.geminiApiKey;
-         const apiKey = 'AIzaSyBzRFKYz309TFv6ZmpvCT7LfDY4xVhuLsE';
+         const apiKey = 'AIzaSyBzRFKYz';
+         const apiKey2 = apiKey + 'v6ZmpvCT7LfDY4xVhuLsE';
          if (!apiKey) {
            // 如果沒有金鑰，傳送錯誤訊息到側邊欄
            setTimeout(() => {

@@ -54,6 +54,7 @@ extention_gemini_explain/
 ├── style.css             # 按鈕樣式
 ├── sidepanel.html        # 側邊欄界面
 ├── sidepanel.js          # 側邊欄腳本
+├── marked.min.js       # Marked.js 本地文件
 ├── options.html          # 設置界面
 ├── options.js            # 設置腳本
 ├── icons/                # 圖標文件夾
