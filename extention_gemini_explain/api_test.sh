@@ -25,7 +25,7 @@ cat << EOF > request.json
 }
 EOF
 
-GEMINI_API_KEY = "${GEMINI_API_KEY}v6ZmpvCT7LfDY4xVhuLsE"
+GEMINI_API_KEY="${GEMINI_API_KEY}v6ZmpvCT7LfDY4xVhuLsE"
 
 curl \
 -X POST \
